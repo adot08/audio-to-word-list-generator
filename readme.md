@@ -1,81 +1,58 @@
-# English Podcast Vocabulary Helper
+# Project Origin
+This project originated from the author's frustration when listening to English podcasts, struggling with unfamiliar words and finding it cumbersome to look them up individually. Thus, the goal was to automate the process of generating a vocabulary list of difficult words.
 
-🎧 Simplify your English podcast listening experience with automatic vocabulary lists
+# Difficult English Word Viewer
+The Difficult English Word Viewer allows users to upload audio/text and automatically generates a vocabulary list of challenging words, providing a convenient way to review them.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/release/python-370/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+## Main Features
 
-English Podcast Vocabulary Helper is an innovative tool designed to enhance your English learning experience by automatically generating vocabulary lists from podcasts and other audio/text sources. Say goodbye to the frustration of encountering unfamiliar words and the tedium of manual lookup!
+- Supports uploading word list files in various formats (txt, md, rtf, mp3, wav, ogg, flac, json)
+- Automatically generates a vocabulary list of difficult words
+- View word definitions and example sentences
+- Generate new example sentences for words
+- Export word data in JSON format
 
-![Web Page Screenshot](web_page.png)
+## Installation Steps
 
-## 🌟 Key Features
-
-- **Multi-format Support**: Upload word lists in various formats (txt, md, rtf, mp3, wav, ogg, flac, json)
-- **Automatic Vocabulary Generation**: Quickly create lists of challenging words from your content
-- **Comprehensive Word Information**: View definitions, example sentences, and generate new contexts
-- **Export Functionality**: Save your progress by exporting word data in JSON format
-- **User-friendly Interface**: Easy-to-use web application for seamless interaction
-
-## 🚀 Quick Start
-
-1. **Clone the repository**
+1. Clone the repository:
    ```
    git clone https://github.com/adot08/audio-to-word-list-generator.git
    cd audio-to-word-list-generato
    ```
 
-2. **Set up the environment**
+2. Create and activate a virtual environment:
    ```
    python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   # On Windows, use:
+   venv\Scripts\activate
+   # On macOS and Linux, use:
+   source venv/bin/activate
+   ```
+
+3. Install required packages:
+   ```
    pip install -r requirements.txt
    ```
 
-3. **Launch the application**
+## Usage Instructions
+
+1. Start the Flask application:
    ```
    python app.py
    ```
 
-4. Open your browser and visit `http://localhost:5000`
+2. Visit `http://localhost:5000` in your web browser
 
-5. Upload your audio/text file and start exploring your personalized vocabulary list!
+3. Use the "Choose File" button to upload a word list file
 
-## 📘 Detailed Usage
+4. Interact with the loaded words using the provided buttons and features
 
-1. **File Upload**: Click "Choose File" to select your audio or text file.
-2. **Processing**: The system will automatically process your file and generate a list of challenging words.
-3. **Explore**: Browse through the generated vocabulary list, view definitions, and example sentences.
-4. **Interact**: Generate new example sentences or export your word data for future reference.
+## Notes
+1. For larger audio files, the waiting time can be longer, mainly due to file segmentation and ASR. Subsequent AI-generated explanations will also take some time, which is related to the number of difficult words, so please be patient when using.
+2. Processed files can be exported and imported directly for future use.
 
-## ⚙️ Configuration
+## Configuration
 
-All customizable options are available in `config.yaml`. You can modify the ASR (Automatic Speech Recognition) and LLM (Language Model) services according to your preferences. This project utilizes SiliconFlow services for comprehensive functionality and easy model switching.
+- All optional configurations are in config.yaml, where you can modify the ASR service and LLM service you need to use. In this project, I chose SiliconFlow's service, which provides a comprehensive set of services, making it convenient for expansion and model switching.
 
-## 📊 Performance
-
-- Processing time may vary for larger audio files due to segmentation and ASR operations.
-- AI-generated explanations might take additional time, depending on the number of challenging words identified.
-- For quicker access in future sessions, processed files can be exported and later re-imported.
-
-## 🤝 Contributing
-
-We welcome contributions to enhance the English Podcast Vocabulary Helper! Please check out our [Contributing Guidelines](CONTRIBUTING.md) for more information on how to get started.
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgements
-
-- Thanks to all contributors who have helped shape this project.
-- Special thanks to SiliconFlow for providing comprehensive AI services.
-
-## 📞 Contact
-
-For any queries or suggestions, please open an issue in this repository or contact the maintainer at [your-email@example.com].
-
----
-
-Keywords: English learning, podcast vocabulary, automatic word list, difficult word viewer, language learning tool, ASR, NLP
+![Web Page Screenshot](web_page.png)
