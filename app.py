@@ -6,31 +6,55 @@ import os
 
 app = Flask(__name__)
 
-# 确保上传文件夹存在
+# Ensure upload folder exists
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# 使用简单的内存存储来保存单词数据
+# Use simple in-memory storage to save word data
 words_data_storage = {}
 
 @app.before_request
 def before_request():
+    """
+    Initialize word data before each request.
+    """
     g.words_data = words_data_storage.get('data', [])
 
 @app.after_request
 def after_request(response):
+    """
+    Save word data after each request.
+
+    Args:
+        response: Flask response object.
+
+    Returns:
+        Flask response object.
+    """
     words_data_storage['data'] = g.words_data
     return response
 
 @app.route('/')
 def index():
+    """
+    Render the main page.
+
+    Returns:
+        str: Rendered HTML template.
+    """
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """
+    Handle file upload and process the file.
+
+    Returns:
+        tuple: JSON response and HTTP status code.
+    """
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
@@ -49,14 +73,27 @@ def upload_file():
             return jsonify(g.words_data)
         except Exception as e:
             return jsonify({'error': str(e)}), 400
+
 @app.route('/export', methods=['POST'])
 def export_data():
+    """
+    Export word data to a JSON file.
+
+    Returns:
+        Flask response object: JSON file for download.
+    """
     with open('exported_data.json', 'w', encoding='utf-8') as f:
         json.dump(g.words_data, f, ensure_ascii=False, indent=2)
     return send_file('exported_data.json', as_attachment=True)
 
 @app.route('/generate_example', methods=['POST'])
 def generate_example():
+    """
+    Generate an example sentence for a given word.
+
+    Returns:
+        tuple: JSON response and HTTP status code.
+    """
     data = request.json
     word = data['word']
     selected_content = data['selected_content']
@@ -64,7 +101,7 @@ def generate_example():
     try:
         example = generate_example_sentence(word, selected_content)
         
-        # 更新单词数据
+        # Update word data
         for word_data in g.words_data:
             if word_data['word'] == word:
                 if 'examples' not in word_data:
