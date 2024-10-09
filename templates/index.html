@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Viewer</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background-color: var(--secondary-color);
+            transition: transform 0.3s ease-in-out;
+            position: fixed;
+            overflow-y: auto;
+            z-index: 1000;
+            left: -250px;
+        }
+
+        #sidebar.open {
+            transform: translateX(250px);
+        }
+
+        #content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-left: 50px;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        #content.sidebar-open {
+            margin-left: calc(var(--sidebar-width) + 50px);
+        }
+
+        #wordList {
+            padding: 10px;
+        }
+
+        .word-item {
+            cursor: pointer;
+            padding: 10px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.2s;
+        }
+
+        .word-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        #wordDisplay {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        #wordDisplay h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        #wordDisplay p {
+            margin-bottom: 10px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #popupButtons {
+            position: fixed;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        #toggleSidebar {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+            background-color: var(--secondary-color);
+        }
+
+        #examples {
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        #examples h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        #examples p {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-input-wrapper .btn-file-input {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: var(--secondary-color);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <button id="toggleSidebar">☰</button>
+    <div id="sidebar">
+        <div id="wordList"></div>
+    </div>
+    <div id="content">
+        <h1>Word Viewer</h1>
+        <div class="button-container">
+            <div class="file-input-wrapper">
+                <button class="btn-file-input">Choose File</button>
+                <input type="file" id="fileInput" accept=".txt,.md,.rtf,.mp3,.wav,.ogg,.flac,.json">
+            </div>
+            <button onclick="exportData()">Export Data</button>
+            <button onclick="prevWord()">Previous</button>
+            <button onclick="speak()">Speak Word</button>
+            <button onclick="nextWord()">Next</button>
+        </div>
+        <div id="wordDisplay"></div>
+        <div id="examples"></div>
+    </div>
+    <div id="popupButtons">
+        <button onclick="speakSelection()">Speak Selection</button>
+        <button onclick="generateExample()">Generate Example</button>
+    </div>
+
+    <script>
+        let wordsData = [];
+        let currentWordIndex = 0;
+
+        document.getElementById('toggleSidebar').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('content').classList.toggle('sidebar-open');
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            uploadFile();
+        });
+
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    wordsData = data;
+                    displayWordList();
+                    displayCurrentWord();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('wordDisplay').textContent = 'Error uploading or processing file';
+                });
+            }
+        }
+
+        function displayWordList() {
+            const wordList = document.getElementById('wordList');
+            wordList.innerHTML = '';
+            wordsData.forEach((word, index) => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item';
+                wordItem.textContent = word.word;
+                wordItem.onclick = () => {
+                    currentWordIndex = index;
+                    displayCurrentWord();
+                };
+                wordList.appendChild(wordItem);
+            });
+        }
+
+        function displayCurrentWord() {
+            const wordDisplay = document.getElementById('wordDisplay');
+            const examplesDiv = document.getElementById('examples');
+            if (wordsData.length > 0) {
+                const word = wordsData[currentWordIndex];
+                let html = `<h2>${word.word}</h2>`;
+                
+                for (const [key, value] of Object.entries(word)) {
+                    if (key !== 'word' && key !== 'examples') {
+                        html += `<p><strong>${key}:</strong> ${value.replace(/\n/g, '<br>')}</p>`;
+                    }
+                }
+                
+                wordDisplay.innerHTML = html;
+                
+                examplesDiv.innerHTML = '<h3>Examples:</h3>';
+                if (word.examples && word.examples.length > 0) {
+                    word.examples.forEach((example, index) => {
+                        examplesDiv.innerHTML += `<p>${index + 1}. ${example.replace(/\n/g, '<br>')}</p>`;
+                    });
+                } else {
+                    examplesDiv.innerHTML += '<p>No examples available.</p>';
+                }
+            } else {
+                wordDisplay.innerHTML = 'No words loaded';
+                examplesDiv.innerHTML = '';
+            }
+        }
+
+        function exportData() {
+            fetch('/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(wordsData)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'exported_data.json';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function speak() {
+            if (wordsData.length > 0) {
+                const word = wordsData[currentWordIndex].word;
+                const utterance = new SpeechSynthesisUtterance(word);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakSelection() {
+            const selection = window.getSelection().toString();
+            if (selection) {
+                const utterance = new SpeechSynthesisUtterance(selection);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function generateExample() {
+            if (wordsData.length > 0) {
+                const word = wordsData[currentWordIndex].word;
+                const selectedContent = window.getSelection().toString();
+                
+                fetch('/generate_example', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        word: word,
+                        selected_content: selectedContent
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!wordsData[currentWordIndex].examples) {
+                        wordsData[currentWordIndex].examples = [];
+                    }
+                    wordsData[currentWordIndex].examples.push(data.example);
+                    displayCurrentWord();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        function prevWord() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                displayCurrentWord();
+            }
+        }
+
+        function nextWord() {
+            if (currentWordIndex < wordsData.length - 1) {
+                currentWordIndex++;
+                displayCurrentWord();
+            }
+        }
+
+        document.addEventListener('selectionchange', function() {
+            const selection = window.getSelection();
+            const popupButtons = document.getElementById('popupButtons');
+            if (selection.toString().length > 0) {
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                popupButtons.style.display = 'block';
+                popupButtons.style.top = `${rect.bottom + window.scrollY}px`;
+                popupButtons.style.left = `${rect.left + window.scrollX}px`;
+            } else {
+                popupButtons.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
