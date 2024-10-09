@@ -22,8 +22,8 @@ English Podcast Vocabulary Helper is an innovative tool designed to enhance your
 
 1. **Clone the repository**
    ```
-   git clone https://github.com/yourusername/english-podcast-vocabulary-helper.git
-   cd english-podcast-vocabulary-helper
+   git clone https://github.com/adot08/audio-to-word-list-generator.git
+   cd audio-to-word-list-generato
    ```
 
 2. **Set up the environment**
