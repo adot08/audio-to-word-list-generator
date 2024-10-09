@@ -17,9 +17,25 @@ nltk.data.path.append(config.nltk_data_path)
 DATA_DIR = Path('./data')
 
 def load_prompt(prompt_key, **params):
-    # use cases
-    # load_prompt('generate_response', query=query, context=context)
-    # load_prompt('analyze_text', input_text=input_text)
+    """
+    Load a prompt from a file and format it with the given parameters.
+
+    Args:
+        prompt_key (str): The key of the prompt in the config.
+        **params: Additional parameters to format the prompt.
+
+    Returns:
+        str: The formatted prompt.
+
+    Raises:
+        KeyError: If the prompt key is not found in the config.
+        FileNotFoundError: If the prompt file is not found.
+        ValueError: If a required parameter is missing.
+
+    Usage:
+        load_prompt('generate_response', query=query, context=context)
+        load_prompt('analyze_text', input_text=input_text)
+    """
     if prompt_key not in config.prompts:
         raise KeyError(f"Prompt '{prompt_key}' not found in config")
 
@@ -37,6 +53,18 @@ def load_prompt(prompt_key, **params):
         raise ValueError(f"Missing parameter for prompt '{prompt_key}': {str(e)}")
 
 def process_dictionary(file_path):
+    """
+    Process a dictionary file and create a JSON dictionary.
+
+    Args:
+        file_path (Path): The path to the dictionary file.
+
+    Returns:
+        dict: A dictionary containing processed entries.
+
+    This function reads a dictionary file, processes its entries,
+    and creates a JSON dictionary with main words and their derived forms.
+    """
     with file_path.open('r', encoding='utf-8') as f:
         content = f.read()
 
@@ -53,16 +81,16 @@ def process_dictionary(file_path):
                     main_word = main_word_match.group(1)
                     dictionary[main_word] = entry
 
-                    # 处理派生词
+                    # Process derived words
                     for line in lines:
                         derived_word_match = re.search(r'^—(\S+)', line.strip())
                         if derived_word_match:
                             derived_word = derived_word_match.group(1)
-                            # 移除词性后缀（如果存在）
+                            # Remove part-of-speech suffix (if exists)
                             derived_word = re.sub(r'[^\w\-]+.*$', '', derived_word)
                             dictionary[derived_word] = entry
 
-    # 保存为JSON文件
+    # Save as JSON file
     json_path = DATA_DIR / 'dictionary.json'
     with json_path.open('w', encoding='utf-8') as f:
         json.dump(dictionary, f, ensure_ascii=False, indent=2)
@@ -70,6 +98,15 @@ def process_dictionary(file_path):
     return dictionary
 
 def read_hard_words(file_path):
+    """
+    Read hard words from a file.
+
+    Args:
+        file_path (Path): The path to the file containing hard words.
+
+    Returns:
+        list: A list of hard words extracted from the file.
+    """
     with file_path.open('r', encoding='utf-8') as f:
         content = f.read()
 
@@ -79,6 +116,18 @@ def read_hard_words(file_path):
     return hard_words
 
 def generate_hard_word_definitions(dictionary, hard_words):
+    """
+    Generate definitions for hard words from a dictionary.
+
+    Args:
+        dictionary (dict): A dictionary containing word definitions.
+        hard_words (list): A list of hard words to look up.
+
+    Returns:
+        tuple: A tuple containing two lists:
+               - List of string definitions for found words
+               - List of words not found in the dictionary
+    """
     hard_word_definitions = []
     missed_words = []
     for word in hard_words:
@@ -87,21 +136,31 @@ def generate_hard_word_definitions(dictionary, hard_words):
         else:
             missed_words.append(word)
 
-    # definitions_path = DATA_DIR / 'hard_words_definitions.txt'
-    # with definitions_path.open('w', encoding='utf-8') as f:
-    #     f.writelines(hard_word_definitions)
-    
-    # missed_words_path = DATA_DIR / 'missed_words.txt'
-    # with missed_words_path.open('w', encoding='utf-8') as f:
-    #     f.writelines(word + '\n' for word in missed_words)
     return hard_word_definitions, missed_words
 
-
 def load_wordlist(file_path):
+    """
+    Load a word list from a file.
+
+    Args:
+        file_path (Path): The path to the file containing the word list.
+
+    Returns:
+        set: A set of words from the file, converted to lowercase.
+    """
     with file_path.open('r', encoding='utf-8') as f:
         return set(word.strip().lower() for word in f)
 
 def get_wordnet_pos(treebank_tag):
+    """
+    Map the Penn Treebank POS tags to WordNet POS tags.
+
+    Args:
+        treebank_tag (str): A Penn Treebank POS tag.
+
+    Returns:
+        str: The corresponding WordNet POS tag.
+    """
     if treebank_tag.startswith('J'):
         return nltk.corpus.wordnet.ADJ
     elif treebank_tag.startswith('V'):
@@ -111,18 +170,28 @@ def get_wordnet_pos(treebank_tag):
     elif treebank_tag.startswith('R'):
         return nltk.corpus.wordnet.ADV
     else:
-        return nltk.corpus.wordnet.NOUN  # 默认作为名词
+        return nltk.corpus.wordnet.NOUN  # Default to noun
 
 def extract_difficult_words(text, wordlist):
+    """
+    Extract words from the text that are not in the given wordlist.
+
+    Args:
+        text (str): The input text to process.
+        wordlist (set): A set of known words.
+
+    Returns:
+        set: A set of words from the text that are not in the wordlist.
+    """
     lemmatizer = WordNetLemmatizer()
     
-    # 将文本转换为小写并分割成单词
+    # Convert text to lowercase and split into words
     words = re.findall(r'\b\w+\b', text.lower())
     
-    # 对单词进行词性标注
+    # Perform POS tagging on the words
     pos_tags = nltk.pos_tag(words)
     
-    # 找出不在词表中的单词（使用词形还原）
+    # Find words not in the wordlist (using lemmatization)
     difficult_words = set()
     for word, pos in pos_tags:
         lemma = lemmatizer.lemmatize(word, pos=get_wordnet_pos(pos))
@@ -135,10 +204,13 @@ def split_audio(file_path, chunk_size_mb=10, cache_dir=".cache"):
     """
     Split an audio file into chunks of specified size.
     
-    :param file_path: Path to the audio file
-    :param chunk_size_mb: Size of each chunk in MB
-    :param cache_dir: Directory to store the chunks
-    :return: List of paths to the chunk files
+    Args:
+        file_path (str): Path to the audio file.
+        chunk_size_mb (int): Size of each chunk in MB.
+        cache_dir (str): Directory to store the chunks.
+
+    Returns:
+        list: List of paths to the chunk files.
     """
     file_size = os.path.getsize(file_path)
     chunk_size_bytes = chunk_size_mb * 1024 * 1024
@@ -172,12 +244,18 @@ def call_llm_api(messages: Union[str, List[str]], url: str, model_name: str, aut
     """
     Call the LLM API with the given parameters.
 
-    :param messages: A string or a list of strings representing the conversation
-    :param url: API endpoint URL
-    :param model_name: Name of the model to use
-    :param authorization: Authorization token
-    :param kwargs: Additional parameters to customize the API call
-    :return: API response as a Python object
+    Args:
+        messages (Union[str, List[str]]): A string or a list of strings representing the conversation.
+        url (str): API endpoint URL.
+        model_name (str): Name of the model to use.
+        authorization (str): Authorization token.
+        **kwargs: Additional parameters to customize the API call.
+
+    Returns:
+        dict: API response as a Python object.
+
+    Raises:
+        requests.exceptions.RequestException: If the API call fails.
     """
     # Format messages
     formatted_messages = format_messages(messages)
@@ -222,8 +300,14 @@ def format_messages(content: Union[str, List[str]]) -> List[dict]:
     """
     Format the input content into a list of message dictionaries.
     
-    :param content: A string or a list of strings
-    :return: A list of message dictionaries
+    Args:
+        content (Union[str, List[str]]): A string or a list of strings.
+
+    Returns:
+        List[dict]: A list of message dictionaries.
+
+    Raises:
+        ValueError: If the content is not a string or a list of strings, or if the list length is even.
     """
     if isinstance(content, str):
         return [{"role": "user", "content": content}]
@@ -236,10 +320,7 @@ def format_messages(content: Union[str, List[str]]) -> List[dict]:
     
     messages = []
     for i, message in enumerate(content):
-        if i % 2 == 0:
-            role = "user"
-        else:
-            role = "assistant"
+        role = "user" if i % 2 == 0 else "assistant"
         messages.append({"role": role, "content": message})
     
     return messages
@@ -248,12 +329,15 @@ def transcribe_audio(file_path, authorization, url, model_name="FunAudioLLM/Sens
     """
     Transcribe an audio file using the specified ASR API.
     
-    :param file_path: Path to the audio file
-    :param authorization: Authorization token for the API
-    :param model_name: Name of the model to use
-    :return: API response text
+    Args:
+        file_path (str): Path to the audio file.
+        authorization (str): Authorization token for the API.
+        url (str): API endpoint URL.
+        model_name (str): Name of the model to use.
+
+    Returns:
+        str: API response text.
     """
-    
     headers = {
         "Authorization": f"Bearer {authorization}",
     }
@@ -274,21 +358,24 @@ def transcribe_large_audio(file_path, authorization, url, model_name="FunAudioLL
     Transcribe a large audio file by splitting it into chunks, transcribing each chunk,
     and then combining the results.
     
-    :param file_path: Path to the audio file
-    :param authorization: Authorization token for the API
-    :param model_name: Name of the model to use
-    :param chunk_size_mb: Size of each chunk in MB
-    :return: Combined transcription result
+    Args:
+        file_path (str): Path to the audio file.
+        authorization (str): Authorization token for the API.
+        url (str): API endpoint URL.
+        model_name (str): Name of the model to use.
+        chunk_size_mb (int): Size of each chunk in MB.
+
+    Returns:
+        str: Combined transcription result.
     """
     chunks = split_audio(file_path, chunk_size_mb)
-    # 虽然是io密集型的，但是和网络带宽也有关系，还是改成顺序执行吧
     transcriptions = []
     for chunk in tqdm(chunks):
         result = transcribe_audio(chunk, authorization, url, model_name)
         try:
             transcriptions.append(json.loads(result)['text'])
         except KeyError:
-            print("warning! error occur in:", chunk)
+            print(f"Warning! Error occurred in: {chunk}")
     
     # Clean up cache
     shutil.rmtree(".cache")
@@ -296,13 +383,31 @@ def transcribe_large_audio(file_path, authorization, url, model_name="FunAudioLL
     return " ".join(transcriptions)
 
 def extract_words(text):
+    """
+    Extract words from numbered list in text.
+
+    Args:
+        text (str): Input text containing numbered list of words.
+
+    Returns:
+        list: List of extracted words.
+    """
     pattern = r'\d+\.\s*(\w+)'
     matches = re.findall(pattern, text)
     return matches
 
 def get_file_content(file_path):
     """
-    读取文件内容，支持文本、音频和JSON文件。
+    Read file content, supporting text, audio, and JSON files.
+
+    Args:
+        file_path (str): Path to the file.
+
+    Returns:
+        Union[str, dict]: File content as string or dictionary for JSON files.
+
+    Raises:
+        ValueError: If the file type is unsupported.
     """
     file_extension = file_path.split('.')[-1].lower()
     
@@ -322,7 +427,14 @@ def get_file_content(file_path):
 
 def get_hard_words(content, simple_word_list):
     """
-    从内容中提取难词并使用 LLM 筛选。
+    Extract difficult words from content and filter them using LLM.
+
+    Args:
+        content (str): Input content to extract words from.
+        simple_word_list (set): Set of simple words to compare against.
+
+    Returns:
+        list: List of hard words selected by LLM.
     """
     hard_words = extract_difficult_words(content, simple_word_list)
     query = load_prompt("hard_words_selection", words_list=", ".join(hard_words))
@@ -334,7 +446,16 @@ def get_hard_words(content, simple_word_list):
 
 def get_word_definitions(dictionary, words):
     """
-    从字典中获取单词定义，并返回未找到定义的单词。
+    Retrieve word definitions from a dictionary and identify missing words.
+
+    Args:
+        dictionary (dict): Dictionary containing word definitions.
+        words (list): List of words to look up.
+
+    Returns:
+        tuple: A tuple containing:
+            - list: Definitions found in the dictionary.
+            - list: Words not found in the dictionary.
     """
     definitions = []
     missed_words = []
@@ -347,7 +468,13 @@ def get_word_definitions(dictionary, words):
 
 def get_missed_word_definitions(missed_words):
     """
-    使用 LLM 获取未找到定义的单词的解释。
+    Use LLM to generate definitions for words not found in the dictionary.
+
+    Args:
+        missed_words (list): List of words without definitions.
+
+    Returns:
+        str: LLM-generated definitions for the missed words.
     """
     query = load_prompt("words_meaning_gen", words_list=", ".join(missed_words))
     result = call_llm_api(query,
@@ -358,7 +485,14 @@ def get_missed_word_definitions(missed_words):
 
 def parse_definitions(definitions, is_ai_generated=False):
     """
-    解析定义字符串，返回格式化的字典。
+    Parse definition strings and return formatted dictionaries.
+
+    Args:
+        definitions (str): String containing word definitions.
+        is_ai_generated (bool): Flag indicating if definitions are AI-generated.
+
+    Returns:
+        list: List of dictionaries containing parsed word definitions.
     """
     output = []
     for definition in definitions.split("\n\n"):
@@ -375,25 +509,31 @@ def parse_definitions(definitions, is_ai_generated=False):
 
 def file_to_desired_dict(file_path):
     """
-    把一个文件转换成难词单词本
+    Convert a file to a dictionary of difficult words with their definitions.
+
+    Args:
+        file_path (str): Path to the input file.
+
+    Returns:
+        list: List of dictionaries containing words and their definitions/explanations.
     """
-    # 获取文件内容
+    # Get file content
     content = get_file_content(file_path)
     
-    # 获取简单词列表
+    # Get simple word list
     simple_word_list = load_wordlist(DATA_DIR / config.simple_word_lists_name)
     
-    # 获取难词列表
+    # Get list of difficult words
     true_hard_words = get_hard_words(content, simple_word_list)
     
-    # 从字典中获取单词定义
+    # Get word definitions from dictionary
     dictionary = process_dictionary(DATA_DIR / config.dict_file_name)
     hard_word_definitions, missed_words = get_word_definitions(dictionary, true_hard_words)
     
-    # 获取未找到定义的单词的 AI 解释
+    # Get AI-generated explanations for words not found in the dictionary
     missed_words_definitions = get_missed_word_definitions(missed_words)
     
-    # 解析并合并结果
+    # Parse and merge results
     output = parse_definitions("\n\n".join(hard_word_definitions))
     output.extend(parse_definitions(missed_words_definitions, is_ai_generated=True))
     
@@ -401,7 +541,14 @@ def file_to_desired_dict(file_path):
 
 def generate_example_sentence(word, selected_content):
     """
-    为给定的单词和选定内容生成例句
+    Generate an example sentence for a given word based on selected content.
+
+    Args:
+        word (str): The word to generate an example for.
+        selected_content (str): Content to base the example on.
+
+    Returns:
+        str: Generated example sentence.
     """
     query = load_prompt("example_generation", word=word, selected_content=selected_content)
     
@@ -412,6 +559,3 @@ def generate_example_sentence(word, selected_content):
     
     example = result["choices"][0]["message"]["content"]
     return example
-
-if __name__ == "__main__":
-    print(file_to_desired_dict("/Users/adot/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache/980662BA-A3F7-46F6-977D-33F6CB349100.mp3"))
