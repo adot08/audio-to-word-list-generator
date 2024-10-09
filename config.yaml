@@ -1,5 +1,5 @@
 nltk_data_path: nltk_data # set nltk data path
-api_key: "sk-your-api-key" # your server api key
+api_key: "sk-banljasmycrhevoqwcyyobrixsdlhfzrbcwmjbmvoecqchnq" # your server api key
 asr_api_base_url: https://api.siliconflow.cn/v1/audio/transcriptions # asr server url
 asr_model_name: FunAudioLLM/SenseVoiceSmall # asr model name
 llm_api_base_url: "https://api.siliconflow.cn/v1/chat/completions" # llm server url
