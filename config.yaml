@@ -1,13 +1,14 @@
-nltk_data_path: nltk_data
-api_key: "sk-your-api-key"
-asr_api_base_url: https://api.siliconflow.cn/v1/audio/transcriptions
-asr_model_name: FunAudioLLM/SenseVoiceSmall
-llm_api_base_url: "https://api.siliconflow.cn/v1/chat/completions"
-llm_model_name: "deepseek-ai/DeepSeek-V2.5"
-dict_file_name: "LDOCE4.txt"
-simple_word_lists_name: "CET_4+6_edited.txt"
+nltk_data_path: nltk_data # set nltk data path
+api_key: "sk-your-api-key" # your server api key
+asr_api_base_url: https://api.siliconflow.cn/v1/audio/transcriptions # asr server url
+asr_model_name: FunAudioLLM/SenseVoiceSmall # asr model name
+llm_api_base_url: "https://api.siliconflow.cn/v1/chat/completions" # llm server url
+llm_model_name: "deepseek-ai/DeepSeek-V2.5" # llm model name
+dict_file_name: "LDOCE4.txt" # default dict
+simple_word_lists_name: "CET_4+6_edited.txt" # default simle word list
 debug: true
 
+# all prompts
 prompts:
   hard_words_selection: prompts/hard_words_selection.txt
   words_meaning_gen: prompts/words_meaning_gen.txt
